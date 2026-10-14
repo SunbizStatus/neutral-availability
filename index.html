@@ -1,0 +1,282 @@
+<title>Neutral Availability</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+  /* Layout: left rail with a searchable neutral picker (max 3), right side a Mon-Fri month grid where each day splits into AM and PM blocks of initials chips. */
+  :root {
+    --bg: #f6f7fa;
+    --surface: #ffffff;
+    --fg: #14213d;
+    --muted: #5b6784;
+    --line: #dde2ec;
+    --block: #f1f3f8;
+    --accent: #1f3a8a;
+    --ok-bg: #d4efe6;
+    --ok-line: #5fbf9f;
+    --c1: #1f3a8a;
+    --c2: #1b8a78;
+    --c3: #c85a1e;
+    --chip-fg: #ffffff;
+    --chip-off: #9aa4bb;
+    --key-on: #2a2d34;
+    --font: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1522;
+      --surface: #171f31;
+      --fg: #e8ecf6;
+      --muted: #9aa6c2;
+      --line: #2a3550;
+      --block: #1e283d;
+      --accent: #8fa8f0;
+      --ok-bg: #17463b;
+      --ok-line: #3fa583;
+      --c1: #5b7fe0;
+      --c2: #2fa793;
+      --c3: #e0763a;
+      --chip-fg: #0b1020;
+      --chip-off: #5d6a88;
+      --key-on: #d4d8e2;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1522;
+    --surface: #171f31;
+    --fg: #e8ecf6;
+    --muted: #9aa6c2;
+    --line: #2a3550;
+    --block: #1e283d;
+    --accent: #8fa8f0;
+    --ok-bg: #17463b;
+    --ok-line: #3fa583;
+    --c1: #5b7fe0;
+    --c2: #2fa793;
+    --c3: #e0763a;
+    --chip-fg: #0b1020;
+    --chip-off: #5d6a88;
+    --key-on: #d4d8e2;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.45;
+    padding-block: 24px 40px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 700; margin: 0 0 4px; text-wrap: balance; }
+  .sub { color: var(--muted); margin: 0 0 20px; max-width: 62ch; }
+
+  .layout { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 20px; align-items: start; }
+
+  .picker { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; min-width: 0; }
+  .picker-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; font-weight: 600; }
+  .picker-head span { color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; }
+  #q { width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); margin-bottom: 8px; }
+  #q:focus-visible, button:focus-visible, .row input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  #names { max-height: 420px; overflow-y: auto; }
+  .row { display: flex; align-items: center; gap: 8px; padding: 6px 2px; cursor: pointer; white-space: nowrap; }
+  .row span:last-child { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .row.locked { opacity: 0.4; cursor: not-allowed; }
+  .row input { margin: 0; }
+  .tag { min-width: 24px; height: 18px; border-radius: 5px; font-size: 9px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; color: var(--chip-fg); flex: none; }
+  .tag.none { visibility: hidden; }
+  .hint { color: var(--muted); font-size: 12px; margin-top: 8px; }
+
+  .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 12px; }
+  .cal-head h2 { font-size: 18px; margin: 0; font-weight: 600; }
+  .nav { display: flex; gap: 6px; }
+  .nav button { font: inherit; width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; font-size: 16px; line-height: 1; }
+  .nav button:hover { border-color: var(--accent); }
+
+  .dow, .grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+  .dow div { text-align: center; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: var(--muted); padding-bottom: 6px; }
+
+  .day { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px 5px 6px; min-width: 0; }
+  .num { font-size: 12px; font-weight: 600; padding: 0 3px 2px; font-variant-numeric: tabular-nums; }
+  .block { border-radius: 7px; padding: 4px 5px 5px; margin-top: 4px; background: var(--block); border: 1px solid transparent; }
+  .block.all { background: var(--ok-bg); border-color: var(--ok-line); }
+  .lab { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 3px; }
+  .chips { display: flex; gap: 3px; }
+  .chip { flex: 1 1 0; max-width: 26px; aspect-ratio: 1; border-radius: 6px; font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center; color: var(--chip-fg); min-width: 0; }
+  .chip.off { background: transparent; border: 1px dashed var(--chip-off); color: var(--chip-off); opacity: 0.8; }
+  .chip.c0 { background: var(--c1); }
+  .chip.c1 { background: var(--c2); }
+  .chip.c2 { background: var(--c3); }
+  .chip.off.c0, .chip.off.c1, .chip.off.c2 { background: transparent; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 18px; color: var(--muted); font-size: 12px; margin-top: 12px; align-items: center; }
+  .legend i { display: inline-block; width: 14px; height: 14px; border-radius: 4px; vertical-align: -3px; margin-right: 6px; }
+  .l-on { background: var(--key-on); }
+  .l-off { border: 1px dashed var(--chip-off); }
+  .l-all { background: var(--ok-bg); border: 1px solid var(--ok-line); }
+  .summary { margin-top: 12px; font-weight: 500; }
+  .note { margin-top: 18px; color: var(--muted); font-size: 12px; }
+  .empty { padding: 28px 12px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: 10px; }
+
+  @media (max-width: 760px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+    #names { max-height: 170px; }
+    .day { padding: 4px 3px; }
+    .block { padding: 3px 3px 4px; }
+    .chips { gap: 2px; }
+    .chip { font-size: 7px; border-radius: 4px; }
+    .lab { font-size: 8px; }
+    .num { font-size: 11px; padding: 0 2px; }
+    .dow, .grid { gap: 4px; }
+  }
+</style>
+
+<div class="wrap">
+  <h1>Neutral availability</h1>
+  <p class="sub">Choose up to three neutrals to see who is free each morning and afternoon.</p>
+
+  <div class="layout">
+    <aside class="picker" aria-label="Neutrals">
+      <div class="picker-head">Neutrals <span id="cnt"></span></div>
+      <input id="q" type="search" placeholder="Search neutrals" aria-label="Search neutrals" autocomplete="off">
+      <div id="names"></div>
+      <div class="hint">Uncheck a neutral to swap in someone else.</div>
+    </aside>
+
+    <main>
+      <div class="cal-head">
+        <h2 id="title" aria-live="polite"></h2>
+        <div class="nav">
+          <button id="prev" type="button" aria-label="Previous month">&#8249;</button>
+          <button id="next" type="button" aria-label="Next month">&#8250;</button>
+        </div>
+      </div>
+      <div class="dow" aria-hidden="true"><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div></div>
+      <div class="grid" id="grid"></div>
+      <div class="summary" id="summary"></div>
+      <div class="legend">
+        <span><i class="l-on"></i>Available</span>
+        <span><i class="l-off"></i>Not available</span>      </div>
+      <div class="note">Sample availability for demonstration. Hover a chip to see the full name.</div>
+    </main>
+  </div>
+</div>
+
+<script>
+  var NEUTRALS = [
+    "Andrew Winston", "Eric Luckman", "Ira Bergman", "Donald Korman", "Philip Thompson",
+    "Brenda Pagliaro", "Jose G. Rodriguez", "Raul Romaguera", "Louis \"Buck\" Vocelle, Jr.",
+    "Gregory Donoghue", "Madeleine Mannello"
+  ];
+  var MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  var MAX = 3;
+
+  function initials(n) {
+    var c = n.replace(/"[^"]*"/g, "").replace(/,?\s*Jr\.?/, "").replace(/\b[A-Z]\.\s*/g, "").trim().split(/\s+/);
+    return (c[0][0] + c[c.length - 1][0]).toUpperCase();
+  }
+  function rnd(s) { var x = Math.sin(s * 9301 + 49297) * 233280; return x - Math.floor(x); }
+  function isFree(i, y, m, d, half) {
+    var wd = new Date(y, m, d).getDay();
+    var h = half === "AM" ? 0 : 1;
+    var r = 0.6 * rnd(i * 37 + d * 11 + h * 3 + m * 101 + y) + 0.4 * rnd(i * 53 + wd * 19 + h * 5);
+    return r > 0.42;
+  }
+
+  var now = new Date();
+  var year = now.getFullYear(), month = now.getMonth();
+  var selected = [1, 5, 2];
+  var query = "";
+
+  var elNames = document.getElementById("names");
+  var elGrid = document.getElementById("grid");
+
+  function renderNames() {
+    var full = selected.length >= MAX;
+    elNames.innerHTML = "";
+    var ids = NEUTRALS.map(function (n, i) { return i; }).filter(function (i) {
+      return !query || NEUTRALS[i].toLowerCase().indexOf(query) !== -1;
+    });
+    ids.sort(function (a, b) { return (selected.indexOf(b) > -1 ? 1 : 0) - (selected.indexOf(a) > -1 ? 1 : 0); });
+    ids.forEach(function (i) {
+      var pos = selected.indexOf(i);
+      var on = pos > -1;
+      var label = document.createElement("label");
+      label.className = "row" + (full && !on ? " locked" : "");
+      var cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.id = "n" + i;
+      cb.checked = on;
+      cb.disabled = full && !on;
+      cb.addEventListener("change", function () {
+        if (cb.checked && selected.length < MAX) selected.push(i);
+        else selected = selected.filter(function (x) { return x !== i; });
+        renderNames();
+        renderCal();
+      });
+      var tag = document.createElement("span");
+      tag.className = "tag" + (on ? "" : " none");
+      if (on) tag.style.background = "var(--c" + (pos + 1) + ")";
+      tag.textContent = initials(NEUTRALS[i]);
+      var nm = document.createElement("span");
+      nm.textContent = NEUTRALS[i];
+      label.appendChild(cb);
+      label.appendChild(tag);
+      label.appendChild(nm);
+      elNames.appendChild(label);
+    });
+    document.getElementById("cnt").textContent = selected.length + " of " + MAX;
+  }
+
+  function block(y, m, d, half) {
+    var chips = selected.map(function (i, k) {
+      var on = isFree(i, y, m, d, half);
+      return '<span class="chip c' + k + (on ? "" : " off") + '" title="' + NEUTRALS[i].replace(/"/g, "&quot;") + (on ? " is free" : " is not free") + '">' + initials(NEUTRALS[i]) + "</span>";
+    }).join("");
+    return '<div class="block"><div class="lab">' + half + '</div><div class="chips">' + chips + "</div></div>";
+  }
+
+  function renderCal() {
+    document.getElementById("title").textContent = MONTHS[month] + " " + year;
+    elGrid.innerHTML = "";
+    if (!selected.length) {
+      var e = document.createElement("div");
+      e.className = "empty";
+      e.style.gridColumn = "1 / -1";
+      e.textContent = "Select a neutral on the left to see availability.";
+      elGrid.appendChild(e);
+      document.getElementById("summary").textContent = "";
+      return;
+    }
+    var last = new Date(year, month + 1, 0).getDate();
+    var firstWeekday = true;
+    var halves = 0;
+    for (var d = 1; d <= last; d++) {
+      var wd = new Date(year, month, d).getDay();
+      if (wd === 0 || wd === 6) continue;
+      var cell = document.createElement("div");
+      cell.className = "day";
+      if (firstWeekday) { cell.style.gridColumnStart = String(wd); firstWeekday = false; }
+      ["AM", "PM"].forEach(function (h) {
+        if (selected.every(function (i) { return isFree(i, year, month, d, h); })) halves++;
+      });
+      cell.innerHTML = '<div class="num">' + d + "</div>" + block(year, month, d, "AM") + block(year, month, d, "PM");
+      elGrid.appendChild(cell);
+    }
+    var who = selected.length === 1 ? "the selected neutral is" : "all " + selected.length + " are";
+    document.getElementById("summary").textContent = halves + (halves === 1 ? " half-day" : " half-days") + " in " + MONTHS[month] + " when " + who + " free.";
+  }
+
+  document.getElementById("q").addEventListener("input", function (e) { query = e.target.value.toLowerCase(); renderNames(); });
+  document.getElementById("prev").addEventListener("click", function () { month--; if (month < 0) { month = 11; year--; } renderCal(); });
+  document.getElementById("next").addEventListener("click", function () { month++; if (month > 11) { month = 0; year++; } renderCal(); });
+
+  renderNames();
+  renderCal();
+</script>
