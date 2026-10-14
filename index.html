@@ -181,6 +181,9 @@
     var c = n.replace(/"[^"]*"/g, "").replace(/,?\s*Jr\.?/, "").replace(/\b[A-Z]\.\s*/g, "").trim().split(/\s+/);
     return (c[0][0] + c[c.length - 1][0]).toUpperCase();
   }
+  function lastName(n) {
+    return n.replace(/"[^"]*"/g, "").replace(/,?\s*Jr\.?/, "").trim().split(/\s+/).pop();
+  }
   function rnd(s) { var x = Math.sin(s * 9301 + 49297) * 233280; return x - Math.floor(x); }
   function isFree(i, y, m, d, half) {
     var wd = new Date(y, m, d).getDay();
@@ -203,7 +206,7 @@
     var ids = NEUTRALS.map(function (n, i) { return i; }).filter(function (i) {
       return !query || NEUTRALS[i].toLowerCase().indexOf(query) !== -1;
     });
-    ids.sort(function (a, b) { return (selected.indexOf(b) > -1 ? 1 : 0) - (selected.indexOf(a) > -1 ? 1 : 0); });
+    ids.sort(function (a, b) { return lastName(NEUTRALS[a]).localeCompare(lastName(NEUTRALS[b])) || NEUTRALS[a].localeCompare(NEUTRALS[b]); });
     ids.forEach(function (i) {
       var pos = selected.indexOf(i);
       var on = pos > -1;
